@@ -1,0 +1,23 @@
+name: websocket_core
+description: >-
+  Core WebSocket Backend for Dart — explicit, performant, no magic abstractions.
+  Pure dart:io WebSocket with session management, reconnection, rooms and protocol versioning.
+version: 1.0.0
+repository: https://github.com/your-username/websocket_core
+
+environment:
+  sdk: ^3.10.4
+
+topics:
+  - websocket
+  - server
+  - backend
+  - realtime
+  - dart-io
+
+# Zero external dependencies - pure dart:io
+dependencies:
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
