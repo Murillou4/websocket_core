@@ -232,7 +232,10 @@ class WsServer {
   }
 
   /// Inicia o servidor
-  Future<void> start() async {
+  ///
+  /// Se [bindServer] for true (padrão), cria um HttpServer na porta configurada.
+  /// Se false, apenas inicializa os componentes internos e espera chamadas em [handleRequest].
+  Future<void> start({bool bindServer = true}) async {
     if (_state != WsServerState.stopped) {
       throw StateError('Server is already running or starting');
     }
@@ -240,26 +243,32 @@ class WsServer {
     _state = WsServerState.starting;
 
     try {
-      // Cria servidor HTTP
-      _httpServer = await HttpServer.bind(
-        config.host,
-        config.port,
-        shared: true,
-      );
-
       // Inicia heartbeat
       _heartbeatManager.start();
-
-      // Escuta conexões
-      _subscriptions.add(_httpServer!.listen(_handleHttpRequest));
 
       // Inicia pub/sub se configurado
       if (pubSub != null) {
         await _setupPubSub();
       }
 
+      if (bindServer) {
+        // Cria servidor HTTP
+        _httpServer = await HttpServer.bind(
+          config.host,
+          config.port,
+          shared: true,
+        );
+
+        // Escuta conexões
+        _subscriptions.add(_httpServer!.listen(handleRequest));
+        print('WebSocket server running on ${config.uri}');
+      } else {
+        print(
+          'WebSocket server starting in detached mode (no HTTP server bound)',
+        );
+      }
+
       _state = WsServerState.running;
-      print('WebSocket server running on ${config.uri}');
     } catch (e) {
       _state = WsServerState.stopped;
       rethrow;
@@ -287,7 +296,7 @@ class WsServer {
       'Server shutting down',
     );
 
-    // Fecha servidor HTTP
+    // Fecha servidor HTTP se existir
     await _httpServer?.close(force: true);
     _httpServer = null;
 
@@ -300,7 +309,17 @@ class WsServer {
   }
 
   /// Trata request HTTP
-  Future<void> _handleHttpRequest(HttpRequest request) async {
+  ///
+  /// Use este método se estiver usando um servidor HTTP externo (ex: shelf, dart:io raw).
+  Future<void> handleRequest(HttpRequest request) async {
+    if (_state != WsServerState.running) {
+      request.response
+        ..statusCode = HttpStatus.serviceUnavailable
+        ..write('WebSocket server is not running')
+        ..close();
+      return;
+    }
+
     // Verifica path
     if (request.uri.path != config.path) {
       request.response
