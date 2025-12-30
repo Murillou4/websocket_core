@@ -169,6 +169,24 @@ final server = WsServer(
 );
 ```
 
+### Uso com Shelf ou servidor externo (Detached Mode)
+
+Você pode usar o `WsServer` apenas para a lógica WebSocket e deixar o servidor HTTP (Shelf, dart:io, etc) gerenciar a porta e rotas.
+
+```dart
+// 1. Inicie sem bind
+await server.start(bindServer: false);
+
+// 2. Encaminhe requests no seu servidor principal
+httpServer.listen((request) {
+  if (request.uri.path == '/ws') {
+    server.handleRequest(request);
+  } else {
+    // Outras rotas (Shelf, etc)
+  }
+});
+```
+
 ---
 
 ## Fluxo de Conexão

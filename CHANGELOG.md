@@ -1,3 +1,9 @@
+## 1.1.0
+
+- **New Features**:
+  - **Detached Mode**: `start(bindServer: false)` allows using `WsServer` with external HTTP servers (like `shelf` or `dart:io`).
+  - Added `handleRequest(HttpRequest)` to manually process WebSocket upgrades.
+
 ## 1.0.0
 
 - Initial release of **websocket_core**.
