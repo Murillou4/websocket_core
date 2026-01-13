@@ -1,3 +1,9 @@
+## 1.2.1
+
+- **Documentation**:
+  - Updated README.md with improved examples for Auto-Reply and RPC.
+  - Fixed installation version instructions.
+
 ## 1.2.0
 
 - **Major DX Improvements**:

@@ -24,7 +24,7 @@ Sessões persistentes, reconexão automática, validação de schema e arquitetu
 
 ```yaml
 dependencies:
-  websocket_core: ^1.2.0
+  websocket_core: ^1.2.1
 ```
 
 ---
