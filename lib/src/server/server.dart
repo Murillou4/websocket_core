@@ -17,6 +17,7 @@ import '../session/session.dart';
 import '../session/session_manager.dart';
 import '../adapters/pubsub.dart';
 import 'config.dart';
+import 'controller.dart';
 
 /// Estado do servidor
 enum WsServerState {
@@ -221,9 +222,24 @@ class WsServer {
     });
   }
 
+  /// Registra um controlador
+  void registerController(WsController controller) {
+    controller.register(this);
+  }
+
   /// Registra handler para um evento
-  void on(String event, WsHandler handler, {bool requiresAuth = false}) {
-    _dispatcher.on(event, handler, requiresAuth: requiresAuth);
+  void on(
+    String event,
+    WsHandler handler, {
+    bool requiresAuth = false,
+    Map<String, bool Function(dynamic)>? schema,
+  }) {
+    _dispatcher.on(
+      event,
+      handler,
+      requiresAuth: requiresAuth,
+      schema: schema,
+    );
   }
 
   /// Registra middleware global
@@ -454,6 +470,17 @@ class WsServer {
       session: session,
       connection: connection,
       message: message,
+      broadcastToRoom: (roomId, event, payload, {excludeSessionId}) {
+        _roomManager.broadcast(
+          roomId,
+          WsMessage(
+            version: config.protocolVersion,
+            event: event,
+            payload: payload,
+          ),
+          excludeSessionId: excludeSessionId,
+        );
+      },
     );
 
     // Despacha

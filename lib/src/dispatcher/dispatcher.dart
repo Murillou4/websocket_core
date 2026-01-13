@@ -1,6 +1,7 @@
 import '../protocol/events.dart';
 import '../protocol/message.dart';
 import 'handler.dart';
+import '../exceptions/exceptions.dart';
 
 /// Registro de handler com metadados
 class HandlerRegistration {
@@ -13,10 +14,14 @@ class HandlerRegistration {
   /// Se requer autenticação
   final bool requiresAuth;
 
+  /// Schema de validação (campo -> validador)
+  final Map<String, bool Function(dynamic)>? schema;
+
   const HandlerRegistration({
     required this.handler,
     this.versions = const {},
     this.requiresAuth = false,
+    this.schema,
   });
 }
 
@@ -56,11 +61,13 @@ class WsDispatcher {
     WsHandler handler, {
     Set<String>? versions,
     bool requiresAuth = false,
+    Map<String, bool Function(dynamic)>? schema,
   }) {
     final registration = HandlerRegistration(
       handler: handler,
       versions: versions ?? {},
       requiresAuth: requiresAuth,
+      schema: schema,
     );
 
     _handlers.putIfAbsent(event, () => []).add(registration);
@@ -72,8 +79,15 @@ class WsDispatcher {
     String version,
     WsHandler handler, {
     bool requiresAuth = false,
+    Map<String, bool Function(dynamic)>? schema,
   }) {
-    on(event, handler, versions: {version}, requiresAuth: requiresAuth);
+    on(
+      event,
+      handler,
+      versions: {version},
+      requiresAuth: requiresAuth,
+      schema: schema,
+    );
   }
 
   /// Registra middleware global
@@ -147,9 +161,49 @@ class WsDispatcher {
         );
       }
 
-      // 4. Executa handler
-      return await registration.handler(context);
+      // 4. Valida schema se houver
+      if (registration.schema != null) {
+        for (final entry in registration.schema!.entries) {
+          final key = entry.key;
+          final validator = entry.value;
+          final value = context.payload[key];
+          if (!validator(value)) {
+            return _createErrorMessage(
+              context,
+              WsErrorCodes.validationFailed,
+              'Validation failed for field: $key',
+            );
+          }
+        }
+      }
+
+      // 5. Executa handler
+      final result = await registration.handler(context);
+
+      if (result is WsMessage) {
+        return result;
+      }
+      
+      if (result is Map<String, dynamic>) {
+        return WsMessage(
+          version: context.message.version,
+          event: '${context.event}.response',
+          payload: result,
+          correlationId: context.correlationId,
+        );
+      }
+
+      return null;
     } catch (error, stack) {
+      // Verifica se é erro de validação (WsContext.bind)
+      if (error is WsValidationException) {
+        return _createErrorMessage(
+          context,
+          WsErrorCodes.validationFailed,
+          error.message,
+        );
+      }
+
       // Handler de erro
       if (_errorHandler != null) {
         return await _errorHandler!(context, error, stack);

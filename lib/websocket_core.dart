@@ -87,6 +87,7 @@ export 'src/dispatcher/dispatcher.dart';
 // ══════════════════════════════════════════════════════════════════════════════
 export 'src/server/config.dart';
 export 'src/server/server.dart';
+export 'src/server/controller.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // OBSERVABILITY
@@ -114,3 +115,8 @@ export 'src/middleware/rate_limiter.dart';
 // EXCEPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 export 'src/exceptions/exceptions.dart';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLIENT
+// ══════════════════════════════════════════════════════════════════════════════
+export 'src/client/client.dart';

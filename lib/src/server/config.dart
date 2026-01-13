@@ -59,6 +59,40 @@ class WsServerConfig {
     this.corsHeaders,
   });
 
+  /// Factory para ambiente de desenvolvimento (configuração relaxada)
+  factory WsServerConfig.dev({
+    int port = 8080,
+    String host = 'localhost',
+  }) {
+    return WsServerConfig(
+      port: port,
+      host: host,
+      requireAuth: false,
+      heartbeatInterval: const Duration(seconds: 60),
+      heartbeatTimeout: const Duration(seconds: 20),
+      sessionSuspendTimeout: const Duration(minutes: 10),
+    );
+  }
+
+  /// Factory para ambiente de produção (configuração segura e otimizada)
+  factory WsServerConfig.prod({
+    required int port,
+    String host = '0.0.0.0',
+    bool requireAuth = true,
+    Map<String, String>? corsHeaders,
+  }) {
+    return WsServerConfig(
+      port: port,
+      host: host,
+      requireAuth: requireAuth,
+      heartbeatInterval: const Duration(seconds: 15),
+      heartbeatTimeout: const Duration(seconds: 5),
+      sessionSuspendTimeout: const Duration(minutes: 2),
+      sessionCleanupInterval: const Duration(minutes: 1),
+      corsHeaders: corsHeaders,
+    );
+  }
+
   /// Cria cópia com modificações
   WsServerConfig copyWith({
     String? host,
