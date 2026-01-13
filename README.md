@@ -24,7 +24,7 @@ Sessões persistentes, reconexão automática, validação de schema e arquitetu
 
 ```yaml
 dependencies:
-  websocket_core: ^1.1.0
+  websocket_core: ^1.2.0
 ```
 
 ---
@@ -48,30 +48,28 @@ void main() async {
     'roomId': (v) => v is String,
   };
 
-  // Handler simples e limpo
+  // Handler moderno com Auto-Reply
   server.on('chat.message', (ctx) async {
-    // 1. Bind & Validate (Lança exceção se inválido)
     final text = ctx.payload['text'];
     final roomId = ctx.payload['roomId'];
 
     print('Msg: $text');
 
-    // 2. Syntactic Sugar para Broadcast
-    // Envia para todos na sala, exceto o remetente
+    // Broadcast para outros usuários
     ctx.broadcastToRoom(roomId, 'chat.new_message', {
       'text': text,
       'sender': ctx.userId ?? 'anon',
     });
 
-    // 3. Resposta direta (Ack)
-    ctx.emit('ack', {'status': 'sent'});
+    // Em 1.2.0, basta retornar o valor para responder ao remetente!
+    return {'status': 'sent', 'timestamp': DateTime.now().millisecondsSinceEpoch};
   }, schema: chatSchema);
   
   // Handler de Join
   server.on('room.join', (ctx) async {
      final roomId = ctx.payload['roomId'];
      server.rooms.join(roomId, ctx.session);
-     ctx.emit('joined', {'roomId': roomId});
+     return {'joined': roomId};
   });
 
   await server.start();
